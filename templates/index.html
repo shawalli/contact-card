@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block container %}
+<div class="justify-content-center">
+    <div class="p-2 bd-highlight">
+        <table class="table table-sm table-hover table-bordered dtable">
+            <thead class="thead-dark">
+                <th scope="col">Name</th>
+                <th scope="col">Title</th>
+                <th scope="col">Email</th>
+                <th scope="col">Phone</th>
+            </thead>
+            <tbody>
+                {% for contact in contacts %}
+                <tr id="{{ contact.sfid }}">
+                    <td>{{ contact.firstname }} {{ contact.lastname }}</td>
+                    <td>{{ contact.title }}</td>
+                    <td>{{ contact.email }}</td>
+                    <td>{{ contact.phone }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
