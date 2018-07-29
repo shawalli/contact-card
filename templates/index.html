@@ -12,7 +12,7 @@
             </thead>
             <tbody>
                 {% for contact in contacts %}
-                <tr id="{{ contact.sfid }}">
+                <tr style="cursor: pointer;" data-url="/contact/{{contact.sfid}}">
                     <td>{{ contact.firstname }} {{ contact.lastname }}</td>
                     <td>{{ contact.title }}</td>
                     <td>{{ contact.email }}</td>
@@ -23,4 +23,11 @@
         </table>
     </div>
 </div>
+
+{% endblock %}
+
+{% block javascript %}
+$('.dtable').on('click', 'tbody tr', function() {
+    window.location = $(this).data("url");
+});
 {% endblock %}
