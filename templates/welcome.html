@@ -1,0 +1,20 @@
+{# This template renders the welcome page for the site.
+#}
+{% extends "layout.html" %}
+
+{% block container %}
+<div class="justify-content-center">
+    <div class="p-2 bd-highlight">
+        Welcome to Contact Card! Please take a moment to connect this
+        application to your Salesforce environment using the button below. Once
+        you are viewing your app's Heroku dashboard, simply click the "Heroku
+        Connect" row within the Add-ons table. Heroku will guide you through
+        the rest of the connection setup. After your connection is complete,
+        return to this app to begin using it.
+
+        <div class="d-flex p-3 justify-content-center">
+            <a class="btn btn-primary" href="{{ heroku_resource_url }}" target="_blank">Connect Salesforce Environment</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -6,12 +6,15 @@ automatically synced back to Salesforce. This app requires a PostGreSQL
 database that is connected to Salesforce via Heroku Connect.
 """
 from base64 import b64encode
-from typing import Optional, Union
+from functools import wraps
 from os import environ, urandom
+from re import search
+from typing import Callable, Optional, Union
 
 from flask import flash, Flask, redirect, render_template, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
+from sqlalchemy.sql import text
 from wtforms import StringField
 from wtforms.validators import DataRequired, Email
 
@@ -31,6 +34,9 @@ class Config:
         This variable is used by SQLAlchemy. SQLAlchemy recommends setting it
         to False if it is not explicitly needed, as the feature has a side
         effect of slowing down transactions.
+    HEROKUY_CONNECT_INITED : bool
+        Whether or not Heroku Connect has been initialized. The app will update
+        this value as necessary.
     """
 
     SECRET_KEY: str = environ.get(
@@ -39,6 +45,8 @@ class Config:
     )
     SQLALCHEMY_DATABASE_URI: str = environ['DATABASE_URL']
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
+
+    HEROKU_CONNECT_INITED = False
 
 
 # Flask application, configured
@@ -129,6 +137,52 @@ class ContactForm(FlaskForm):
     )
 
 
+def salesforce_connection_exists() -> bool:
+    """Tests whether Heroku Connect has been configured.
+    """
+
+    if not app.config['HEROKU_CONNECT_INITED']:
+        with db.engine.connect() as conn:
+            # Search for the 'salesforce' schema
+            statement = text(
+                "SELECT COUNT(*) "
+                "FROM information_schema.schemata "
+                "WHERE schema_name = 'salesforce';"
+            )
+
+            # Unpack the proxy and extract single result (count)
+            results_proxy = conn.execute(statement)
+            results = [result for result in results_proxy]
+            result = results.pop()
+            schema_exists = bool(result['count'])
+
+            if schema_exists:
+                app.config['HEROKU_CONNECT_INITED'] = True
+
+    return app.config['HEROKU_CONNECT_INITED']
+
+
+def heroku_connect_required(func: Callable) -> Callable:
+    """View decorator that checks whether Heroku Connect has been configured
+    and redirects the user to the welcome page if the connection has not been
+    set up.
+    """
+
+    @wraps(func)
+    def decorated_view(*args, **kwargs) -> Callable:
+        """Returns original view method if Heroku Connect is setup.
+
+        If not set up, redirects to the welcome page.
+        """
+
+        if salesforce_connection_exists():
+            return func(*args, **kwargs)
+        else:
+            return redirect(url_for('welcome'))
+
+    return decorated_view
+
+
 @app.before_request
 def force_https() -> redirect:
     """Redirects all HTTP requests to HTTPS."""
@@ -138,7 +192,35 @@ def force_https() -> redirect:
         return redirect(url, code=301)
 
 
+@app.route('/welcome')
+def welcome() -> Union[redirect, render_template]:
+    """Renders the welcome page to the app.
+
+    Only available if Heroku Connect has not yet been set up.
+    """
+
+    if salesforce_connection_exists():
+        return redirect(url_for('index'))
+
+    app_name_match = search(
+        '^https?://([\w-]*).herokuapp.com.*',
+        request.url_root
+    )
+
+    app_name = app_name_match.group(1)
+
+    heroku_resource_url = (
+        f"https://dashboard.heroku.com/apps/{app_name}/resources"
+    )
+
+    return render_template(
+        'welcome.html',
+        heroku_resource_url=heroku_resource_url
+    )
+
+
 @app.route('/')
+@heroku_connect_required
 def index() -> render_template:
     """Renders page for URL root (index)."""
 
@@ -149,6 +231,7 @@ def index() -> render_template:
 
 
 @app.route('/contact/<string:sfid>', methods=['GET', 'POST'])
+@heroku_connect_required
 def contact(sfid: str) -> Union[redirect, render_template]:
     """Renders or edits a contact based on the Salesforce record.
 
