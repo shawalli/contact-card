@@ -1,0 +1,30 @@
+{
+    "name": "Contact Card App",
+    "description": "Sample app that interfaces with Salesforce contacts through Heroku Connect",
+    "repository": "https://github.com/shawalli/contact-card",
+    "keywords": [
+        "python",
+        "flask",
+        "herokuconnect",
+        "heroku-connect",
+        "salesforce"
+    ],
+    "addons": [
+        "heroku-postgresql:hobby-dev",
+        "herokuconnect:demo"
+    ],
+    "buildpacks": [
+        {
+            "url": "heroku/python"
+        }
+    ],
+    "env": {
+        "SECRET_KEY": {
+            "description": "A secret key for security-based actions.",
+            "generator": "secret",
+            "required": true
+        }
+    },
+    "image": "heroku/python",
+    "success_url": "/welcome"
+}
