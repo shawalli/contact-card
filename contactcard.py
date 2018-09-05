@@ -34,7 +34,7 @@ class Config:
         This variable is used by SQLAlchemy. SQLAlchemy recommends setting it
         to False if it is not explicitly needed, as the feature has a side
         effect of slowing down transactions.
-    HEROKUY_CONNECT_INITED : bool
+    HEROKU_CONNECT_INITED : bool
         Whether or not Heroku Connect has been initialized. The app will update
         this value as necessary.
     """
